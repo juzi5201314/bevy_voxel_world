@@ -190,7 +190,7 @@ impl<C: Send + Sync + 'static, I: Hash + Copy + Eq> ChunkTask<C, I> {
         F: FnMut(IVec3) -> WorldVoxel<I> + Send + 'static,
     {
         let mut filled_count = 0;
-        let modified_voxels = (*self.modified_voxels).read().unwrap();
+        let modified_voxels = (*self.modified_voxels).read();
         let mut voxels = [WorldVoxel::Unset; PaddedChunkShape::SIZE as usize];
         let mut material_count = HashSet::new();
 

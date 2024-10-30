@@ -9,11 +9,8 @@ use bevy::{
     utils::{HashMap, HashSet},
 };
 use futures_lite::future;
-use std::{
-    collections::VecDeque,
-    marker::PhantomData,
-    sync::{Arc, RwLock},
-};
+use parking_lot::RwLock;
+use std::{collections::VecDeque, marker::PhantomData, sync::Arc};
 
 use crate::{
     chunk::*,
@@ -46,7 +43,7 @@ impl<C: VoxelWorldConfig> Default for ModifiedVoxels<C, C::Index> {
 
 impl<C: VoxelWorldConfig> ModifiedVoxels<C, C::Index> {
     pub fn get_voxel(&self, position: &IVec3) -> Option<WorldVoxel<C::Index>> {
-        let modified_voxels = self.0.read().unwrap();
+        let modified_voxels = self.0.read();
         modified_voxels.get(position).cloned()
     }
 }
@@ -310,10 +307,7 @@ where
                 }
 
                 // Also no need to mesh if a matching mesh is already cached
-                let mesh_cache_hit = mesh_map
-                    .read()
-                    .unwrap()
-                    .contains_key(&chunk_task.voxels_hash());
+                let mesh_cache_hit = mesh_map.read().contains_key(&chunk_task.voxels_hash());
                 if !mesh_cache_hit {
                     chunk_task.mesh(texture_index_mapper);
                 }
@@ -422,7 +416,7 @@ where
         modified_voxels: ResMut<ModifiedVoxels<C, C::Index>>,
     ) {
         let chunk_map_read_lock = chunk_map.get_read_lock();
-        let mut modified_voxels = modified_voxels.write().unwrap();
+        let mut modified_voxels = modified_voxels.write();
 
         for (position, voxel) in buffer.iter() {
             let (chunk_pos, _vox_pos) = get_chunk_voxel_position(*position);

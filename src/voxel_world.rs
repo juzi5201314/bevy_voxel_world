@@ -143,7 +143,7 @@ impl<'w, C: VoxelWorldConfig> VoxelWorld<'w, C> {
             }
 
             let chunk_opt = {
-                let chun_map_read = chunk_map.read().unwrap();
+                let chun_map_read = chunk_map.read();
                 chun_map_read.get(&chunk_pos).cloned()
             };
 
@@ -279,7 +279,7 @@ impl<'w, C: VoxelWorldConfig> VoxelWorld<'w, C> {
             let p = ray.origin;
             let d = *ray.direction;
 
-            let loaded_aabb = ChunkMap::<C, C::Index>::get_world_bounds(&chunk_map.read().unwrap());
+            let loaded_aabb = ChunkMap::<C, C::Index>::get_world_bounds(&chunk_map.read());
             let trace_start =
                 if p.cmplt(loaded_aabb.min.into()).any() || p.cmpgt(loaded_aabb.max.into()).any() {
                     if let Some(trace_start_t) =

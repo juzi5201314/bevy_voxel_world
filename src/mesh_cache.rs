@@ -1,9 +1,9 @@
+use bevy::prelude::*;
+use parking_lot::RwLock;
 use std::{
     marker::PhantomData,
-    sync::{Arc, RwLock, Weak},
+    sync::{Arc, Weak},
 };
-
-use bevy::prelude::*;
 use weak_table::WeakValueHashMap;
 
 /// This is used to keep a reference to a mesh handle in each chunk entity. This ensures that the WeakMap
@@ -28,7 +28,7 @@ impl<C: Send + Sync + 'static> MeshCache<C> {
             return;
         }
 
-        if let Ok(mut map) = self.map.try_write() {
+        if let Some(mut map) = self.map.try_write() {
             for (voxels, mesh) in insert_buffer.drain(..) {
                 map.insert(voxels, mesh);
             }
@@ -37,7 +37,7 @@ impl<C: Send + Sync + 'static> MeshCache<C> {
     }
 
     pub fn get(&self, voxels_hash: &u64) -> Option<Arc<Handle<Mesh>>> {
-        self.map.read().unwrap().get(voxels_hash)
+        self.map.read().get(voxels_hash)
     }
 
     pub fn get_map(&self) -> Arc<RwLock<WeakMeshMap>> {

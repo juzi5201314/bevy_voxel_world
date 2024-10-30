@@ -1,8 +1,3 @@
-use std::{
-    marker::PhantomData,
-    sync::{Arc, RwLock, RwLockReadGuard},
-};
-
 use crate::{
     chunk::{self, ChunkData, CHUNK_SIZE_F},
     voxel::VOXEL_SIZE,
@@ -12,6 +7,11 @@ use bevy::{
     math::{bounding::Aabb3d, Vec3A},
     prelude::*,
     utils::hashbrown::HashMap,
+};
+use parking_lot::{RwLock, RwLockReadGuard};
+use std::{
+    marker::PhantomData,
+    sync::Arc,
 };
 
 #[derive(Deref, DerefMut)]
@@ -60,7 +60,7 @@ impl<C: Send + Sync + 'static, I: Copy> ChunkMap<C, I> {
     }
 
     pub fn get_read_lock(&self) -> RwLockReadGuard<ChunkMapData<I>> {
-        self.map.read().unwrap()
+        self.map.read()
     }
 
     pub fn get_map(&self) -> Arc<RwLock<ChunkMapData<I>>> {
@@ -78,7 +78,7 @@ impl<C: Send + Sync + 'static, I: Copy> ChunkMap<C, I> {
             return;
         }
 
-        if let Ok(mut write_lock) = self.map.try_write() {
+        if let Some(mut write_lock) = self.map.try_write() {
             for (position, chunk_data) in insert_buffer.iter() {
                 write_lock.data.insert(
                     *position,
