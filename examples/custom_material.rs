@@ -24,11 +24,11 @@ struct MyMainWorld;
 
 impl VoxelWorldConfig for MyMainWorld {
     type Index = u8;
-    fn texture_index_mapper(&self) -> Arc<dyn Fn(Self::Index) -> [u32; 3] + Send + Sync> {
+    fn texture_index_mapper(&self) -> TextureIndexMapper<Self::Index> {
         Arc::new(|vox_mat: u8| match vox_mat {
-            RED => [1, 1, 1],
-            GREEN => [2, 2, 2],
-            BLUE | _ => [3, 3, 3],
+            RED => [1, 1, 1].into(),
+            GREEN => [2, 2, 2].into(),
+            BLUE | _ => [3, 3, 3].into(),
         })
     }
 }

@@ -17,8 +17,11 @@ use ndshape::ConstShape;
 
 use crate::{
     chunk::{PaddedChunkShape, CHUNK_SIZE_U},
+    prelude::TextureIndexMapper,
     voxel::WorldVoxel,
-    voxel_material::ATTRIBUTE_TEX_INDEX,
+    voxel_material::{
+        ATTRIBUTE_X_AXIS_TEX_INDEX, ATTRIBUTE_Y_AXIS_TEX_INDEX, ATTRIBUTE_Z_AXIS_TEX_INDEX,
+    },
 };
 
 type VoxelArray<I> = Arc<[WorldVoxel<I>; PaddedChunkShape::SIZE as usize]>;
@@ -27,7 +30,7 @@ type VoxelArray<I> = Arc<[WorldVoxel<I>; PaddedChunkShape::SIZE as usize]>;
 pub(super) fn generate_chunk_mesh<I: PartialEq + Copy>(
     voxels: VoxelArray<I>,
     _pos: IVec3,
-    texture_index_mapper: Arc<dyn Fn(I) -> [u32; 3] + Send + Sync>,
+    texture_index_mapper: TextureIndexMapper<I>,
 ) -> Mesh {
     let faces = RIGHT_HANDED_Y_UP_CONFIG.faces;
     let mut buffer = UnitQuadBuffer::new();
@@ -49,7 +52,7 @@ fn mesh_from_quads<I: PartialEq + Copy>(
     quads: UnitQuadBuffer,
     faces: [OrientedBlockFace; 6],
     voxels: VoxelArray<I>,
-    texture_index_mapper: Arc<dyn Fn(I) -> [u32; 3] + Send + Sync>,
+    texture_index_mapper: TextureIndexMapper<I>,
 ) -> Mesh {
     let num_indices = quads.num_quads() * 6;
     let num_vertices = quads.num_quads() * 4;
@@ -58,7 +61,9 @@ fn mesh_from_quads<I: PartialEq + Copy>(
     let mut positions = Vec::with_capacity(num_vertices);
     let mut normals = Vec::with_capacity(num_vertices);
     let mut tex_coords = Vec::with_capacity(num_vertices);
-    let mut material_types = Vec::with_capacity(num_vertices);
+    let mut x_axis_material_types = Vec::with_capacity(num_vertices);
+    let mut y_axis_material_types = Vec::with_capacity(num_vertices);
+    let mut z_axis_material_types = Vec::with_capacity(num_vertices);
     let mut aos = Vec::with_capacity(num_vertices);
 
     for (group, face) in quads.groups.into_iter().zip(faces.into_iter()) {
@@ -88,9 +93,15 @@ fn mesh_from_quads<I: PartialEq + Copy>(
             let voxel_index = PaddedChunkShape::linearize(quad.minimum) as usize;
             let material_type = match voxels[voxel_index] {
                 WorldVoxel::Solid(mt) => texture_index_mapper(mt),
-                _ => [0, 0, 0],
+                _ => 0.into(),
             };
-            material_types.extend(std::iter::repeat(material_type).take(4));
+
+            x_axis_material_types
+                .extend(std::iter::repeat([material_type.right, material_type.left]).take(4));
+            y_axis_material_types
+                .extend(std::iter::repeat([material_type.top, material_type.bottom]).take(4));
+            z_axis_material_types
+                .extend(std::iter::repeat([material_type.front, material_type.back]).take(4));
         }
     }
 
@@ -112,8 +123,16 @@ fn mesh_from_quads<I: PartialEq + Copy>(
         VertexAttributeValues::Float32x2(tex_coords),
     );
     render_mesh.insert_attribute(
-        ATTRIBUTE_TEX_INDEX,
-        VertexAttributeValues::Uint32x3(material_types),
+        ATTRIBUTE_X_AXIS_TEX_INDEX,
+        VertexAttributeValues::Uint32x2(x_axis_material_types),
+    );
+    render_mesh.insert_attribute(
+        ATTRIBUTE_Y_AXIS_TEX_INDEX,
+        VertexAttributeValues::Uint32x2(y_axis_material_types),
+    );
+    render_mesh.insert_attribute(
+        ATTRIBUTE_Z_AXIS_TEX_INDEX,
+        VertexAttributeValues::Uint32x2(z_axis_material_types),
     );
 
     // Apply ambient occlusion values

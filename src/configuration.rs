@@ -6,6 +6,17 @@ use bevy::prelude::*;
 
 pub type VoxelLookupFn<I> = Box<dyn FnMut(IVec3) -> WorldVoxel<I> + Send + Sync>;
 pub type VoxelLookupDelegate<I> = Box<dyn Fn(IVec3) -> VoxelLookupFn<I> + Send + Sync>;
+pub type TextureIndexMapper<I> = Arc<dyn Fn(I) -> FaceTextureIndex + Send + Sync>;
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FaceTextureIndex {
+    pub top: u32,
+    pub left: u32,
+    pub right: u32,
+    pub front: u32,
+    pub back: u32,
+    pub bottom: u32,
+}
 
 #[derive(Default, PartialEq, Eq)]
 pub enum ChunkDespawnStrategy {
@@ -82,10 +93,8 @@ pub trait VoxelWorldConfig: Resource + Default + Clone {
     /// The three values correspond to the top, sides and bottom of the voxel. For example,
     /// if the slice is `[1,2,2]`, the top will use texture index 1 and the sides and bottom will use texture
     /// index 2.
-    fn texture_index_mapper(&self) -> Arc<dyn Fn(Self::Index) -> [u32; 3] + Send + Sync> {
-        Arc::new(|mat| match mat {
-            _ => [0, 0, 0],
-        })
+    fn texture_index_mapper(&self) -> TextureIndexMapper<Self::Index> {
+        Arc::new(|_| 0.into())
     }
 
     /// A function that returns a function that returns true if a voxel exists at the given position
@@ -113,6 +122,47 @@ pub trait VoxelWorldConfig: Resource + Default + Clone {
     fn init_root(&self, mut _commands: Commands, _root: Entity) {}
 }
 
+/// [x+, x-, y+, y-, z+, z-]
+impl From<[u32; 6]> for FaceTextureIndex {
+    fn from(value: [u32; 6]) -> Self {
+        FaceTextureIndex {
+            right: value[0],
+            left: value[1],
+            top: value[2],
+            bottom: value[3],
+            front: value[4],
+            back: value[5],
+        }
+    }
+}
+
+/// [top, side, bottom]
+impl From<[u32; 3]> for FaceTextureIndex {
+    fn from(value: [u32; 3]) -> Self {
+        FaceTextureIndex {
+            left: value[1],
+            right: value[1],
+            top: value[0],
+            bottom: value[1],
+            front: value[1],
+            back: value[2],
+        }
+    }
+}
+
+impl From<u32> for FaceTextureIndex {
+    fn from(value: u32) -> Self {
+        FaceTextureIndex {
+            left: value,
+            right: value,
+            top: value,
+            bottom: value,
+            front: value,
+            back: value,
+        }
+    }
+}
+
 #[derive(Resource, Clone, Default)]
 pub struct DefaultWorld;
 
@@ -121,13 +171,13 @@ impl DefaultWorld {}
 impl VoxelWorldConfig for DefaultWorld {
     type Index = u8;
 
-    fn texture_index_mapper(&self) -> Arc<dyn Fn(Self::Index) -> [u32; 3] + Send + Sync> {
+    fn texture_index_mapper(&self) -> TextureIndexMapper<Self::Index> {
         Arc::new(|mat| match mat {
-            0 => [0, 0, 0],
-            1 => [1, 1, 1],
-            2 => [2, 2, 2],
-            3 => [3, 3, 3],
-            _ => [0, 0, 0],
+            0 => 0.into(),
+            1 => 1.into(),
+            2 => 2.into(),
+            3 => 3.into(),
+            _ => 0.into(),
         })
     }
 }

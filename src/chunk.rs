@@ -6,7 +6,9 @@ use std::{
     sync::Arc,
 };
 
-use crate::{meshing, voxel::WorldVoxel, voxel_world_internal::ModifiedVoxels};
+use crate::{
+    meshing, prelude::TextureIndexMapper, voxel::WorldVoxel, voxel_world_internal::ModifiedVoxels,
+};
 
 // The size of a chunk in voxels
 // TODO: implement a way to change this though the configuration
@@ -239,7 +241,7 @@ impl<C: Send + Sync + 'static, I: Hash + Copy + Eq> ChunkTask<C, I> {
     }
 
     /// Generate a mesh for the chunk based on the currect voxel data
-    pub fn mesh(&mut self, texture_index_mapper: Arc<dyn Fn(I) -> [u32; 3] + Send + Sync>) {
+    pub fn mesh(&mut self, texture_index_mapper: TextureIndexMapper<I>) {
         if self.mesh.is_none() && self.chunk_data.voxels.is_some() {
             self.mesh = Some(meshing::generate_chunk_mesh(
                 self.chunk_data.voxels.as_ref().unwrap().clone(),

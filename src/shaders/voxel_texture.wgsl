@@ -52,7 +52,9 @@ struct Vertex {
     @builtin(vertex_index) index: u32,
 #endif
 
-    @location(8) tex_idx: vec3<u32>
+    @location(8) x_axis_tex_idx: vec2<u32>,
+    @location(9) y_axis_tex_idx: vec2<u32>,
+    @location(10) z_axis_tex_idx: vec2<u32>,
 };
 
 struct CustomVertexOutput {
@@ -75,7 +77,9 @@ struct CustomVertexOutput {
     @location(6) @interpolate(flat) instance_index: u32,
 #endif
 
-    @location(8) tex_idx: vec3<u32>,
+    @location(8) x_axis_tex_idx: vec2<u32>,
+    @location(9) y_axis_tex_idx: vec2<u32>,
+    @location(10) z_axis_tex_idx: vec2<u32>,
 }
 
 @vertex
@@ -109,7 +113,9 @@ fn vertex(vertex: Vertex) -> CustomVertexOutput {
     out.instance_index = vertex.instance_index;
 #endif
 
-    out.tex_idx = vertex.tex_idx;
+    out.x_axis_tex_idx = vertex.x_axis_tex_idx;
+    out.y_axis_tex_idx = vertex.y_axis_tex_idx;
+    out.z_axis_tex_idx = vertex.z_axis_tex_idx;
 
     return out;
 }
@@ -128,16 +134,32 @@ fn fragment(
     standard_in.instance_index = in.instance_index;
     var pbr_input = pbr_input_from_standard_material(standard_in, is_front);
 
-    var tex_face = 0;
+    // top, +Y
+    var tex_idx = in.y_axis_tex_idx[0];
 
     // determine texture index based on normal
     if in.world_normal.y == 0.0 {
-        tex_face = 1;
+        if in.world_normal.x == 0.0 {
+            if in.world_normal.z < 0.0 {
+                // back, -Z
+                tex_idx = in.z_axis_tex_idx[1];
+            } else if in.world_normal.z > 0.0 {
+                // front, +Z
+                tex_idx = in.z_axis_tex_idx[0];
+            }
+        } else if in.world_normal.x < 0.0 {
+            // left, -X
+            tex_idx = in.x_axis_tex_idx[1];
+        } else if in.world_normal.x > 0.0 {
+            // right, +X
+            tex_idx = in.x_axis_tex_idx[0];
+        }
     } else if in.world_normal.y < 0.0 {
-        tex_face = 2;
+        // bottom, -Y
+         tex_idx = in.y_axis_tex_idx[1];
     }
 
-    pbr_input.material.base_color = textureSample(mat_array_texture, mat_array_texture_sampler, in.uv, in.tex_idx[tex_face]);
+    pbr_input.material.base_color = textureSample(mat_array_texture, mat_array_texture_sampler, in.uv, tex_idx);
     pbr_input.material.base_color = pbr_input.material.base_color * in.color;
 
     pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);

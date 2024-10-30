@@ -23,8 +23,14 @@ pub(crate) struct TextureLayers(pub u32);
 
 pub const VOXEL_TEXTURE_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(6998301138411443008);
 
-pub(crate) const ATTRIBUTE_TEX_INDEX: MeshVertexAttribute =
-    MeshVertexAttribute::new("TextureIndex", 989640910, VertexFormat::Uint32x3);
+pub(crate) const ATTRIBUTE_X_AXIS_TEX_INDEX: MeshVertexAttribute =
+    MeshVertexAttribute::new("XAxisTextureIndex", 989640910, VertexFormat::Uint32x2);
+
+pub(crate) const ATTRIBUTE_Y_AXIS_TEX_INDEX: MeshVertexAttribute =
+    MeshVertexAttribute::new("YAxisTextureIndex", 989640911, VertexFormat::Uint32x2);
+
+pub(crate) const ATTRIBUTE_Z_AXIS_TEX_INDEX: MeshVertexAttribute =
+    MeshVertexAttribute::new("ZAxisTextureIndex", 989640912, VertexFormat::Uint32x2);
 
 pub fn vertex_layout() -> Vec<VertexAttributeDescriptor> {
     vec![
@@ -36,7 +42,9 @@ pub fn vertex_layout() -> Vec<VertexAttributeDescriptor> {
         Mesh::ATTRIBUTE_COLOR.at_shader_location(7),
         //Mesh::ATTRIBUTE_JOINT_INDEX.at_shader_location(6),
         //Mesh::ATTRIBUTE_JOINT_WEIGHT.at_shader_location(7),
-        ATTRIBUTE_TEX_INDEX.at_shader_location(8),
+        ATTRIBUTE_X_AXIS_TEX_INDEX.at_shader_location(8),
+        ATTRIBUTE_Y_AXIS_TEX_INDEX.at_shader_location(9),
+        ATTRIBUTE_Z_AXIS_TEX_INDEX.at_shader_location(10),
     ]
 }
 #[derive(Asset, AsBindGroup, Debug, Clone, TypePath)]

@@ -9,10 +9,7 @@ use bevy::{
     utils::hashbrown::HashMap,
 };
 use parking_lot::{RwLock, RwLockReadGuard};
-use std::{
-    marker::PhantomData,
-    sync::Arc,
-};
+use std::{marker::PhantomData, sync::Arc};
 
 #[derive(Deref, DerefMut)]
 pub struct ChunkMapData<I> {

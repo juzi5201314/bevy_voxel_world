@@ -16,11 +16,11 @@ struct MyMainWorld;
 impl VoxelWorldConfig for MyMainWorld {
     type Index = BlockTexture;
 
-    fn texture_index_mapper(&self) -> Arc<dyn Fn(Self::Index) -> [u32; 3] + Send + Sync> {
+    fn texture_index_mapper(&self) -> TextureIndexMapper<Self::Index> {
         Arc::new(|vox_mat| match vox_mat {
-            BlockTexture::SnowyBrick => [0, 1, 2],
-            BlockTexture::FullBrick => [2, 2, 2],
-            BlockTexture::Grass => [3, 3, 3],
+            BlockTexture::SnowyBrick => [0, 1, 2].into(),
+            BlockTexture::FullBrick => 2.into(),
+            BlockTexture::Grass => 3.into(),
         })
     }
 
